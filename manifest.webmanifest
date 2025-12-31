@@ -1,6 +1,6 @@
 {
-  "name": "Swapcurrency",
-  "short_name": "Swapcurrency",
+  "name": "Here2Home",
+  "short_name": "Here2Home",
   "description": "A super simple travel currency converter PWA",
   "start_url": "./",
   "display": "standalone",
