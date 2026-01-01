@@ -3,302 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#667eea">
+    <meta name="theme-color" content="#1F6F6A">
     <title>Here2Home</title>
     <link rel="manifest" href="./manifest.webmanifest">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            <div style="position:fixed;top:10px;left:10px;z-index:9999;background:red;color:white;padding:6px 10px;font:12px monospace;">
-              LIVE TEST: 01-01-2026 00:30
-            </div>
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        
-        .container {
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            max-width: 600px;
-            width: 100%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        }
-        
-        h1 {
-            font-size: 2.5em;
-            color: #667eea;
-            margin-bottom: 30px;
-            font-weight: 700;
-            text-align: center;
-        }
-        
-        .form-group {
-            margin-bottom: 25px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #555;
-            font-weight: 500;
-            font-size: 0.95em;
-        }
-        
-        select, input[type="number"] {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 1em;
-            font-family: inherit;
-            transition: border-color 0.3s;
-        }
-        
-        select:focus, input[type="number"]:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        
-        .output {
-            background: #f5f5f5;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            padding: 20px;
-            min-height: 80px;
-            margin-bottom: 25px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #777;
-            font-size: 1.1em;
-        }
-        
-        .output.has-result {
-            background: #e8f5e9;
-            border-color: #4caf50;
-            color: #2e7d32;
-        }
-        
-        .converted-amount {
-            font-size: 1.8em;
-            font-weight: bold;
-            color: #667eea;
-            margin-top: 10px;
-        }
-        
-        .conversion-info {
-            font-size: 0.85em;
-            color: #666;
-            margin-top: 5px;
-        }
-        
-        .status {
-            padding: 12px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            font-size: 0.85em;
-            color: #666;
-            text-align: center;
-            line-height: 1.6;
-        }
-        
-        .status.online {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .status.offline {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        
-        .status-line {
-            margin-bottom: 5px;
-        }
-        
-        .logo-container {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-        
-        .logo {
-            max-width: 200px;
-            width: 100%;
-            height: auto;
-            margin-bottom: 20px;
-        }
-        
-        .welcome-text {
-            font-size: 1.2em;
-            color: #555;
-            line-height: 1.6;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-    </style>
+    <link rel="stylesheet" href="./styles.css">
 </head>
-
 <body>
-  <div style="position:fixed;top:10px;left:10px;z-index:9999;background:red;color:white;padding:6px 10px;font:12px monospace;">
-  LIVE TEST: 01-01-2026 00:30
-  </div>
-  <main class="card">
-    <button class="settings-icon" id="settingsIcon" type="button" aria-label="Settings" title="Settings">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="12" cy="12" r="2.5" fill="currentColor"/>
-        <path d="M12 2L13.5 6.5L18 5L16.5 9.5L21 12L16.5 14.5L18 19L13.5 17.5L12 22L10.5 17.5L6 19L7.5 14.5L3 12L7.5 9.5L6 5L10.5 6.5L12 2Z"
-              stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
-
-    <img src="./hear2home_logo.png" alt="Here2Home logo" class="logo">
-
-    <h1>Here2Home</h1>
-
-    <p class="home-country-display" id="homeCountryDisplay">Your home country is currently Australia.</p>
-    <p class="home-currency-hint">
-      To change your home currency tap <a href="#" id="settingsLink" class="settings-link">here</a>.
-    </p>
-
-    <p class="welcome-text">Type a local price and see what it costs back home.</p>
-
-    <form autocomplete="off">
-      <div class="form-group">
-        <label for="amount" id="amountLabel">Amount</label>
-        <input
-          type="number"
-          id="amount"
-          inputmode="decimal"
-          placeholder="Enter amount"
-          step="0.01"
-          min="0"
-        >
-      </div>
-
-      <div class="result" id="output">
-        <strong>Amount in AUD:</strong>
-      </div>
-    </form>
-
-    <div id="status" class="status online">Online</div>
-    <div id="lastUpdated" class="last-updated"></div>
-  </main>
-
-  <div id="updateBanner" class="update-banner" role="status" aria-live="polite">
-    Update available — refresh
-  </div>
-
-  <!-- Settings Modal -->
-  <div class="modal" id="settingsModal" aria-hidden="true">
-    <div class="modal-content" role="dialog" aria-modal="true" aria-label="User settings">
-      <div class="modal-header">
-        <h2>User settings</h2>
-        <button class="close-btn" id="closeModal" type="button" aria-label="Close settings">&times;</button>
-      </div>
-
-      <!-- Settings Menu -->
-      <div id="settingsMenu" class="settings-menu">
-        <button type="button" class="settings-option" id="updateExchangeBtn">Update exchange database</button>
-        <button type="button" class="settings-option" id="colorSchemeBtn">Choose different colour scheme</button>
-        <button type="button" class="settings-option" id="updateHomeCountryBtn">Update home country</button>
-        <button type="button" class="settings-back-btn" id="cancelSettingsBtn">Cancel</button>
-      </div>
-
-      <!-- Update Exchange Database Section -->
-      <div id="updateExchangeSection" class="settings-section" style="display:none;">
-        <h3>Update Exchange Database</h3>
-        <p>Fetch the latest exchange rates from the server.</p>
-        <button type="button" class="settings-action-btn" id="updateExchangeActionBtn">Update Now</button>
-        <button type="button" class="settings-back-btn" onclick="showSettingsMenu()">Back</button>
-      </div>
-
-      <!-- Color Scheme Section -->
-      <div id="colorSchemeSection" class="settings-section" style="display:none;">
-        <h3>Choose Colour Scheme</h3>
-        <p>Select a colour theme for the app.</p>
-        <div class="form-group">
-          <label for="colorSchemeSelect">Colour Scheme</label>
-          <select id="colorSchemeSelect">
-            <option value="default">Default</option>
-            <option value="dark">Dark</option>
-            <option value="light">Light</option>
-          </select>
+    <main class="card">
+        <div class="settings-icon" id="settingsIcon" title="Settings">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="2.5" fill="currentColor"/>
+                <path d="M12 2L13.5 6.5L18 5L16.5 9.5L21 12L16.5 14.5L18 19L13.5 17.5L12 22L10.5 17.5L6 19L7.5 14.5L3 12L7.5 9.5L6 5L10.5 6.5L12 2Z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
         </div>
-        <button type="button" class="settings-action-btn" id="saveColorSchemeBtn">Save</button>
-        <button type="button" class="settings-back-btn" onclick="showSettingsMenu()">Back</button>
-      </div>
-
-      <!-- Update Home Country Section (unique currencies only) -->
-      <div id="updateHomeCountrySection" class="settings-section" style="display:none;">
-        <h3>Update Home Currency</h3>
-        <div class="form-group">
-          <label for="homeCurrencySelect">Select your home currency</label>
-          <select id="homeCurrencySelect">
-            <option value="AUD">Australian Dollar (AUD)</option>
-            <option value="USD">US Dollar (USD)</option>
-            <option value="GBP">British Pound (GBP)</option>
-            <option value="CAD">Canadian Dollar (CAD)</option>
-            <option value="NZD">New Zealand Dollar (NZD)</option>
-
-            <option value="EUR">Euro (EUR)</option>
-            <option value="CHF">Swiss Franc (CHF)</option>
-            <option value="SEK">Swedish Krona (SEK)</option>
-            <option value="NOK">Norwegian Krone (NOK)</option>
-            <option value="DKK">Danish Krone (DKK)</option>
-            <option value="PLN">Polish Zloty (PLN)</option>
-            <option value="CZK">Czech Koruna (CZK)</option>
-            <option value="HUF">Hungarian Forint (HUF)</option>
-            <option value="RUB">Russian Ruble (RUB)</option>
-            <option value="TRY">Turkish Lira (TRY)</option>
-
-            <option value="JPY">Japanese Yen (JPY)</option>
-            <option value="CNY">Chinese Yuan (CNY)</option>
-            <option value="KRW">South Korean Won (KRW)</option>
-            <option value="SGD">Singapore Dollar (SGD)</option>
-            <option value="HKD">Hong Kong Dollar (HKD)</option>
-            <option value="THB">Thai Baht (THB)</option>
-            <option value="MYR">Malaysian Ringgit (MYR)</option>
-            <option value="IDR">Indonesian Rupiah (IDR)</option>
-            <option value="PHP">Philippine Peso (PHP)</option>
-            <option value="VND">Vietnamese Dong (VND)</option>
-            <option value="INR">Indian Rupee (INR)</option>
-            <option value="PKR">Pakistani Rupee (PKR)</option>
-            <option value="BDT">Bangladeshi Taka (BDT)</option>
-            <option value="LKR">Sri Lankan Rupee (LKR)</option>
-            <option value="NPR">Nepalese Rupee (NPR)</option>
-
-            <option value="BRL">Brazilian Real (BRL)</option>
-            <option value="MXN">Mexican Peso (MXN)</option>
-            <option value="ARS">Argentine Peso (ARS)</option>
-
-            <option value="ZAR">South African Rand (ZAR)</option>
-            <option value="NGN">Nigerian Naira (NGN)</option>
-            <option value="KES">Kenyan Shilling (KES)</option>
-            <option value="EGP">Egyptian Pound (EGP)</option>
-
-            <option value="ILS">Israeli Shekel (ILS)</option>
-            <option value="AED">UAE Dirham (AED)</option>
-            <option value="SAR">Saudi Riyal (SAR)</option>
-          </select>
+        
+        <img src="./hear2home_logo.png" alt="Here2Home Logo" class="logo">
+        
+        <h1>Here2Home</h1>
+        <p class="home-country-display" id="homeCountryDisplay">Your home country is currently Australia.</p>
+        <p class="home-currency-hint">
+            To change your home currency press <a href="#" id="settingsLink" class="settings-link">here</a>
+        </p>
+        
+        <p class="welcome-text">Type a local price and see what it costs back home.</p>
+        
+        <form>
+            <div class="form-group">
+                <label for="amount" id="amountLabel">Amount</label>
+                <input type="number" id="amount" inputmode="decimal" placeholder="Enter amount" step="0.01" min="0">
+            </div>
+            
+            <div class="result" id="output">
+                <strong>Amount in AUD:</strong>
+            </div>
+        </form>
+        
+        <div id="status" class="status online">Online</div>
+        <div id="lastUpdated" style="font-size: 0.75em; color: var(--text-2); text-align: center; margin-top: 8px;"></div>
+    </main>
+    
+    <div id="updateBanner" class="update-banner">Update available — refresh</div>
+    
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>User settings</h2>
+                <button class="close-btn" id="closeModal">&times;</button>
+            </div>
+            
+            <!-- Settings Menu -->
+            <div id="settingsMenu" class="settings-menu">
+                <button type="button" class="settings-option" id="updateExchangeBtn">Update exchange database</button>
+                <button type="button" class="settings-option" id="colorSchemeBtn">Choose different color scheme</button>
+                <button type="button" class="settings-option" id="updateHomeCountryBtn">Update home country</button>
+                <button type="button" class="settings-back-btn" id="cancelSettingsBtn">Cancel</button>
+            </div>
+            
+            <!-- Update Exchange Database Section -->
+            <div id="updateExchangeSection" class="settings-section" style="display: none;">
+                <h3>Update Exchange Database</h3>
+                <p>Fetch the latest exchange rates from the server.</p>
+                <button type="button" class="settings-action-btn" id="updateExchangeActionBtn">Update Now</button>
+                <button type="button" class="settings-back-btn" onclick="showSettingsMenu()">Back</button>
+            </div>
+            
+            <!-- Color Scheme Section -->
+            <div id="colorSchemeSection" class="settings-section" style="display: none;">
+                <h3>Choose Color Scheme</h3>
+                <p>Select a color theme for the app.</p>
+                <div class="form-group">
+                    <label for="colorSchemeSelect">Color Scheme</label>
+                    <select id="colorSchemeSelect">
+                        <option value="default">Default</option>
+                        <option value="dark">Dark</option>
+                        <option value="light">Light</option>
+                    </select>
+                </div>
+                <button type="button" class="settings-action-btn" id="saveColorSchemeBtn">Save</button>
+                <button type="button" class="settings-back-btn" onclick="showSettingsMenu()">Back</button>
+            </div>
+            
+            <!-- Update Home Country Section -->
+            <div id="updateHomeCountrySection" class="settings-section" style="display: none;">
+                <h3>Update Home Country</h3>
+                <div class="form-group">
+                    <label for="homeCurrencySelect">Select Your Home Country</label>
+                    <select id="homeCurrencySelect">
+                        <option value="AUD">Australia - Australian Dollar (AUD)</option>
+                        <option value="USD">United States - US Dollar (USD)</option>
+                        <option value="GBP">United Kingdom - British Pound (GBP)</option>
+                        <option value="CAD">Canada - Canadian Dollar (CAD)</option>
+                        <option value="JPY">Japan - Japanese Yen (JPY)</option>
+                        <option value="CNY">China - Chinese Yuan (CNY)</option>
+                        <option value="INR">India - Indian Rupee (INR)</option>
+                        <option value="EUR">Germany - Euro (EUR)</option>
+                        <option value="EUR">France - Euro (EUR)</option>
+                        <option value="EUR">Italy - Euro (EUR)</option>
+                        <option value="EUR">Spain - Euro (EUR)</option>
+                        <option value="EUR">Netherlands - Euro (EUR)</option>
+                        <option value="EUR">Belgium - Euro (EUR)</option>
+                        <option value="EUR">Austria - Euro (EUR)</option>
+                        <option value="CHF">Switzerland - Swiss Franc (CHF)</option>
+                        <option value="SEK">Sweden - Swedish Krona (SEK)</option>
+                        <option value="NOK">Norway - Norwegian Krone (NOK)</option>
+                        <option value="DKK">Denmark - Danish Krone (DKK)</option>
+                        <option value="PLN">Poland - Polish Zloty (PLN)</option>
+                        <option value="RUB">Russia - Russian Ruble (RUB)</option>
+                        <option value="TRY">Turkey - Turkish Lira (TRY)</option>
+                        <option value="KRW">South Korea - South Korean Won (KRW)</option>
+                        <option value="SGD">Singapore - Singapore Dollar (SGD)</option>
+                        <option value="HKD">Hong Kong - Hong Kong Dollar (HKD)</option>
+                        <option value="THB">Thailand - Thai Baht (THB)</option>
+                        <option value="MYR">Malaysia - Malaysian Ringgit (MYR)</option>
+                        <option value="IDR">Indonesia - Indonesian Rupiah (IDR)</option>
+                        <option value="PHP">Philippines - Philippine Peso (PHP)</option>
+                        <option value="VND">Vietnam - Vietnamese Dong (VND)</option>
+                        <option value="NZD">New Zealand - New Zealand Dollar (NZD)</option>
+                        <option value="BRL">Brazil - Brazilian Real (BRL)</option>
+                        <option value="MXN">Mexico - Mexican Peso (MXN)</option>
+                        <option value="ARS">Argentina - Argentine Peso (ARS)</option>
+                        <option value="ZAR">South Africa - South African Rand (ZAR)</option>
+                        <option value="ILS">Israel - Israeli Shekel (ILS)</option>
+                        <option value="AED">United Arab Emirates - UAE Dirham (AED)</option>
+                        <option value="SAR">Saudi Arabia - Saudi Riyal (SAR)</option>
+                        <option value="EGP">Egypt - Egyptian Pound (EGP)</option>
+                        <option value="NGN">Nigeria - Nigerian Naira (NGN)</option>
+                        <option value="KES">Kenya - Kenyan Shilling (KES)</option>
+                        <option value="PKR">Pakistan - Pakistani Rupee (PKR)</option>
+                        <option value="BDT">Bangladesh - Bangladeshi Taka (BDT)</option>
+                        <option value="LKR">Sri Lanka - Sri Lankan Rupee (LKR)</option>
+                        <option value="NPR">Nepal - Nepalese Rupee (NPR)</option>
+                        <option value="CZK">Czech Republic - Czech Koruna (CZK)</option>
+                        <option value="HUF">Hungary - Hungarian Forint (HUF)</option>
+                    </select>
+                </div>
+                <button type="button" class="settings-action-btn" id="changeCurrencyBtn">Update</button>
+                <button type="button" class="settings-back-btn" onclick="showSettingsMenu()">Back</button>
+            </div>
         </div>
-        <button type="button" class="settings-action-btn" id="changeCurrencyBtn">Update</button>
-        <button type="button" class="settings-back-btn" onclick="showSettingsMenu()">Back</button>
-      </div>
     </div>
-  </div>
-
-  <script src="./app.js" defer></script>
+    
+    <script src="./app.js"></script>
 </body>
 </html>
