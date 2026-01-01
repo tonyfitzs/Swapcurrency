@@ -112,7 +112,18 @@ label {
   font-size: 0.95em;
 }
 
-select,
+select {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  font-size: 1em;
+  font-family: inherit;
+  background: white;
+  color: var(--text);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
 input[type="number"] {
   width: 100%;
   padding: 12px 15px;
@@ -123,6 +134,60 @@ input[type="number"] {
   background: white;
   color: var(--text);
   transition: border-color 0.3s, box-shadow 0.3s;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Hide number input spinner arrows */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+/* Input with button container */
+.input-with-button {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.input-with-button input[type="number"] {
+  flex: 1;
+  margin: 0;
+  width: auto;
+}
+
+.go-btn {
+  padding: 12px 20px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1em;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.1s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.go-btn:hover {
+  background: var(--accent);
+}
+
+.go-btn:active {
+  transform: scale(0.98);
+}
+
+.go-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(31, 111, 106, 0.3);
 }
 
 select:focus,
@@ -481,6 +546,17 @@ button:active {
   input[type="number"] {
     padding: 10px 12px;
     font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  .input-with-button {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .go-btn {
+    width: 100%;
+    padding: 12px;
+    min-width: auto;
   }
 }
 

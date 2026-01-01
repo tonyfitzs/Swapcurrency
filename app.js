@@ -261,10 +261,28 @@ function updateResult() {
   }
 }
 
+// Go button element
+const goBtn = document.getElementById('goBtn');
+
 // Listen to amount input changes
 if (amountInput) {
   amountInput.addEventListener('input', updateResult);
   amountInput.addEventListener('change', updateResult);
+  
+  // Also trigger on Enter key
+  amountInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      updateResult();
+    }
+  });
+}
+
+// Go button click handler
+if (goBtn) {
+  goBtn.addEventListener('click', () => {
+    updateResult();
+  });
 }
 
 // Initialize result box with home currency
