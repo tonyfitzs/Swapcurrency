@@ -4,6 +4,7 @@ const outputElement = document.getElementById('output');
 const statusElement = document.getElementById('status');
 const lastUpdatedElement = document.getElementById('lastUpdated');
 const amountLabel = document.getElementById('amountLabel');
+const connectivityStatusElement = document.getElementById('connectivityStatus');
 
 // Location permission and currency storage keys
 const LOCATION_PERMISSION_KEY = 'locationPermissionGranted';
@@ -565,9 +566,71 @@ function formatDateTime(timestamp) {
   return `${month}/${day}/${year} ${hours}:${minutesStr}`;
 }
 
+// Connectivity state
+let isOnline = true;
+let isCheckingConnectivity = false;
+
+// Test connectivity using fetch (simulates ping to 8.8.8.8)
+// Since browsers can't ping directly, we use a fetch request with timeout
+async function testConnectivity() {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
+  
+  try {
+    // Try to fetch from Google's servers (simulating ping to 8.8.8.8)
+    // Using a small resource to minimize data transfer
+    // Using a timestamp to prevent caching
+    const response = await fetch('https://www.google.com/favicon.ico?t=' + Date.now(), {
+      method: 'HEAD',
+      signal: controller.signal,
+      cache: 'no-store'
+    });
+    clearTimeout(timeoutId);
+    
+    // Check if response is ok (status 200-299)
+    if (response.ok || response.status === 0) {
+      return true; // Connection successful
+    }
+    return false; // Connection failed
+  } catch (error) {
+    clearTimeout(timeoutId);
+    // Request timed out, network error, or destination unreachable
+    return false; // Connection failed
+  }
+}
+
+// Update connectivity status
+async function updateConnectivityStatus() {
+  // Prevent overlapping requests
+  if (isCheckingConnectivity) {
+    return;
+  }
+  
+  isCheckingConnectivity = true;
+  const connected = await testConnectivity();
+  isOnline = !connected; // Invert the result
+  isCheckingConnectivity = false;
+  
+  // Update top-left status indicator
+  if (connectivityStatusElement) {
+    if (isOnline) {
+      connectivityStatusElement.textContent = 'Online';
+      connectivityStatusElement.classList.remove('offline');
+      connectivityStatusElement.classList.add('online');
+    } else {
+      connectivityStatusElement.textContent = 'OFFLINE';
+      connectivityStatusElement.classList.remove('online');
+      connectivityStatusElement.classList.add('offline');
+    }
+  }
+  
+  // Update status pill
+  updateStatusPill();
+}
+
 // Update status pill with online/offline and cache status
 function updateStatusPill() {
-  if (navigator.onLine) {
+  if (isOnline) {
     statusElement.textContent = 'Online — cached for offline use';
     statusElement.classList.remove('offline');
     statusElement.classList.add('online');
@@ -841,19 +904,19 @@ if (saveColorSchemeBtn) {
 }
 
 // Set initial status on load
-updateStatusPill();
+updateConnectivityStatus();
 displayLastUpdated();
 
-// Listen for online/offline events
+// Listen for online/offline events (as backup)
 window.addEventListener('online', () => {
-  updateStatusPill();
+  updateConnectivityStatus();
 });
 
 window.addEventListener('offline', () => {
-  updateStatusPill();
+  updateConnectivityStatus();
 });
 
-// Poll online/offline status every 100ms for real-time updates
+// Poll connectivity status every 100ms for real-time updates
 setInterval(() => {
-  updateStatusPill();
+  updateConnectivityStatus();
 }, 100);
