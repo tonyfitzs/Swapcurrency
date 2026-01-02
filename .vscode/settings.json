@@ -1,0 +1,26 @@
+{
+    // Development Profile - YOLO Mode Enabled
+    // This file contains workspace-specific settings for development
+    // To use production settings, modify the Agent settings in Cursor's UI:
+    // Settings > Agents > Turn ON all protection toggles
+    // Note: Cursor Agent settings (Browser Protection, File-Deletion Protection, etc.)
+    // are currently global and cannot be set via workspace settings.
+    // You'll need to manually switch them in Settings > Agents when switching between
+    // development and production modes.
+    // Workspace-specific editor settings
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.fixAll": "explicit"
+    },
+    // File associations
+    "files.associations": {
+        "*.js": "javascript",
+        "*.html": "html",
+        "*.css": "css"
+    },
+    // Exclude files from search
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/.git": true
+    }
+}

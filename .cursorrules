@@ -1,0 +1,29 @@
+# Cursor Rules for Swapcurrency Project
+
+## Development Mode Guidelines
+
+When in development mode (YOLO enabled):
+- Make changes directly without asking for confirmation
+- Apply fixes and improvements proactively
+- Update related files when making changes
+- Test changes when possible
+
+## Code Style
+- Use modern JavaScript (ES6+)
+- Follow existing code patterns
+- Maintain mobile-first responsive design
+- Ensure PWA functionality (offline support, service worker)
+
+## File Structure
+- HTML: `index.html`
+- Styles: `styles.css`
+- Scripts: `app.js`
+- Service Worker: `service-worker.js`
+- Manifest: `manifest.webmanifest`
+
+## Important Notes
+- This is a PWA - always test on mobile devices
+- Maintain offline functionality
+- Keep exchange rate caching working
+- Ensure responsive design for Android/iOS
+

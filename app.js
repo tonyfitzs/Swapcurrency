@@ -226,9 +226,9 @@ const countryCurrencyMap = [
   { country: 'Hungary', currency: 'Hungarian Forint', code: 'HUF' }
 ];
 
-// Home currency - Load from localStorage (default AUD)
-let HOME_CURRENCY = localStorage.getItem('homeCurrency') || 'AUD';
-let HOME_COUNTRY = currencyToCountry[HOME_CURRENCY] || 'Australia';
+// Home currency - Load from localStorage (default VND to match image)
+let HOME_CURRENCY = localStorage.getItem('homeCurrency') || 'VND';
+let HOME_COUNTRY = currencyToCountry[HOME_CURRENCY] || 'Vietnam';
 
 // Update home country display
 function updateHomeCountryDisplay() {
@@ -244,21 +244,137 @@ updateHomeCountryDisplay();
 // Initialize amount label with default currency (VND)
 updateAmountLabel();
 
+// Pre-fetch exchange rates on load
+window.addEventListener('load', async () => {
+  await fetchExchangeRates();
+});
+
 // Get location and update currency when app loads
 // This will request permission from the user
 updateCurrencyFromLocation();
 
+// Exchange Rates Cache
+let exchangeRates = null;
+const RATES_CACHE_KEY = 'exchangeRates';
+const RATES_CACHE_TIME = 24 * 60 * 60 * 1000; // 24 hours
+
+// Fetch exchange rates
+async function fetchExchangeRates() {
+  // Check cache first
+  const cached = localStorage.getItem(RATES_CACHE_KEY);
+  if (cached) {
+    const { rates, timestamp } = JSON.parse(cached);
+    const age = Date.now() - timestamp;
+    if (age < RATES_CACHE_TIME) {
+      console.log('Using cached exchange rates');
+      return rates;
+    }
+  }
+
+  // Fetch from API if online
+  if (!navigator.onLine) {
+    // Use cached rates even if expired when offline
+    if (cached) {
+      const { rates } = JSON.parse(cached);
+      console.log('Offline: Using expired cached rates');
+      return rates;
+    }
+    return null;
+  }
+
+  try {
+    // Using exchangerate-api.com (free, no API key required)
+    const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+    if (!response.ok) throw new Error('Failed to fetch rates');
+    
+    const data = await response.json();
+    const rates = data.rates;
+    
+    // Cache the rates
+    localStorage.setItem(RATES_CACHE_KEY, JSON.stringify({
+      rates: rates,
+      timestamp: Date.now()
+    }));
+    
+    console.log('Exchange rates fetched and cached');
+    return rates;
+  } catch (error) {
+    console.error('Error fetching exchange rates:', error);
+    // Try to use cached rates even if expired
+    if (cached) {
+      const { rates } = JSON.parse(cached);
+      console.log('Using expired cached rates due to fetch error');
+      return rates;
+    }
+    return null;
+  }
+}
+
+// Format currency amount
+function formatCurrency(amount, currency) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(amount);
+}
+
 // Update result box based on amount input
-function updateResult() {
-  const amount = amountInput.value.trim();
+async function updateResult() {
+  const amount = parseFloat(amountInput.value.trim());
   
-  if (!amount || amount === '') {
+  if (!amount || amount <= 0 || isNaN(amount)) {
     outputElement.innerHTML = `<strong>Amount in ${HOME_CURRENCY}:</strong>`;
     outputElement.classList.remove('has-result');
-  } else {
-    outputElement.textContent = 'Conversion coming next step';
-    outputElement.classList.add('has-result');
+    return;
   }
+
+  // Show loading state
+  outputElement.innerHTML = 'Loading exchange rates...';
+  outputElement.classList.remove('has-result');
+
+  // Fetch exchange rates
+  const rates = await fetchExchangeRates();
+
+  if (!rates) {
+    outputElement.innerHTML = 'Unable to fetch exchange rates. Please check your connection.';
+    outputElement.classList.remove('has-result');
+    return;
+  }
+
+  // Convert: fromCurrency -> USD -> HOME_CURRENCY
+  // First convert fromCurrency amount to USD (if not USD)
+  let amountInUSD = amount;
+  if (fromCurrency !== 'USD') {
+    if (!rates[fromCurrency]) {
+      outputElement.innerHTML = `Exchange rate not available for ${fromCurrency}`;
+      outputElement.classList.remove('has-result');
+      return;
+    }
+    const fromCurrencyToUSD = 1 / rates[fromCurrency];
+    amountInUSD = amount * fromCurrencyToUSD;
+  }
+
+  // Then convert USD to HOME_CURRENCY
+  let convertedAmount = amountInUSD;
+  if (HOME_CURRENCY !== 'USD') {
+    if (!rates[HOME_CURRENCY]) {
+      outputElement.innerHTML = `Exchange rate not available for ${HOME_CURRENCY}`;
+      outputElement.classList.remove('has-result');
+      return;
+    }
+    convertedAmount = amountInUSD * rates[HOME_CURRENCY];
+  }
+
+  // Display result
+  outputElement.innerHTML = `
+    <strong>Amount in ${HOME_CURRENCY}:</strong>
+    <div style="font-size: 1.5em; font-weight: bold; color: var(--primary); margin-top: 10px;">
+      ${formatCurrency(convertedAmount, HOME_CURRENCY)}
+    </div>
+  `;
+  outputElement.classList.add('has-result');
 }
 
 // Go button element

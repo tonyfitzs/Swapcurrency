@@ -2,15 +2,15 @@
 :root {
   --bg-1: #6B6FD6;
   --bg-2: #5A5FBF;
-  --surface: #FAF7F2;
-  --surface-2: #F1F2F4;
-  --text: #1E1E1E;
-  --text-2: #6B7280;
-  --primary: #1F6F6A;
-  --accent: #D07A5A;
+  --surface: #FAF7F2; /* Light beige background */
+  --surface-2: #F1F2F4; /* Light gray for result box */
+  --text: #1E1E1E; /* Dark gray for bold text */
+  --text-2: #6B7280; /* Lighter gray for secondary text */
+  --primary: #1F6F6A; /* Teal */
+  --accent: #D07A5A; /* Muted orange */
   --border: #E6E1D8;
-  --success-bg: #DDF2E1;
-  --success-text: #1E7A3A;
+  --success-bg: #DDF2E1; /* Light green for status */
+  --success-text: #1E7A3A; /* Darker green text */
   --danger-bg: #FCE8E8;
   --danger-text: #A23B3B;
 }
@@ -24,25 +24,32 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background: linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
+  background: var(--surface); /* Light beige background matching image */
   min-height: 100vh;
   display: flex;
   justify-content: center;
-  align-items: center;
-  padding: 20px;
+  align-items: flex-start;
+  padding: 0;
   color: var(--text);
+  margin: 0;
+  overflow-x: hidden;
 }
 
 /* Main Card Container */
 .card,
 .container {
   background: var(--surface);
-  border-radius: 20px;
-  padding: 40px;
-  max-width: 600px;
+  border-radius: 0;
+  padding: 20px;
+  max-width: 100%;
   width: 100%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  box-shadow: none;
   position: relative;
+  min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height for mobile */
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 /* Typography */
@@ -53,6 +60,7 @@ h1 {
   font-weight: 700;
   text-align: center;
   margin-top: 0;
+  flex-shrink: 0;
 }
 
 .home-country-display {
@@ -61,6 +69,7 @@ h1 {
   color: var(--text);
   text-align: center;
   margin: 0 0 8px 0;
+  flex-shrink: 0;
 }
 
 .home-currency-hint {
@@ -69,6 +78,7 @@ h1 {
   color: var(--text-2);
   text-align: center;
   margin: 2px 0 20px 0;
+  flex-shrink: 0;
 }
 
 .settings-link {
@@ -89,6 +99,7 @@ h1 {
   height: auto;
   margin: 0 auto 5px;
   display: block;
+  flex-shrink: 0;
 }
 
 .welcome-text {
@@ -97,9 +108,16 @@ h1 {
   line-height: 1.6;
   text-align: center;
   margin: 0 0 30px 0;
+  flex-shrink: 0;
 }
 
 /* Form Elements */
+form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 .form-group {
   margin-bottom: 25px;
 }
@@ -136,6 +154,7 @@ input[type="number"] {
   transition: border-color 0.3s, box-shadow 0.3s;
   -moz-appearance: textfield;
   appearance: textfield;
+  touch-action: manipulation;
 }
 
 /* Hide number input spinner arrows */
@@ -151,12 +170,14 @@ input[type="number"]::-webkit-outer-spin-button {
   display: flex;
   gap: 10px;
   align-items: stretch;
+  width: 100%;
 }
 
 .input-with-button input[type="number"] {
   flex: 1;
   margin: 0;
   width: auto;
+  min-width: 0;
 }
 
 .go-btn {
@@ -175,6 +196,8 @@ input[type="number"]::-webkit-outer-spin-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .go-btn:hover {
@@ -208,7 +231,7 @@ input[type="number"]:focus {
   margin-bottom: 25px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   color: var(--text-2);
   font-size: 1.1em;
@@ -225,6 +248,8 @@ input[type="number"]:focus {
 .output strong {
   font-weight: 700;
   color: var(--text);
+  display: block;
+  width: 100%;
 }
 
 .converted-amount {
@@ -243,13 +268,15 @@ input[type="number"]:focus {
 /* Status Pill */
 .status {
   padding: 12px;
-  background: var(--surface-2);
+  background: var(--success-bg);
   border-radius: 8px;
-  font-size: 0.85em;
-  color: var(--text-2);
+  font-size: 0.9em;
+  color: var(--success-text);
   text-align: center;
   line-height: 1.6;
-  margin-top: 20px;
+  margin-top: auto;
+  margin-bottom: 0;
+  width: 100%;
 }
 
 .status.online {
@@ -264,6 +291,10 @@ input[type="number"]:focus {
 
 .status-line {
   margin-bottom: 5px;
+}
+
+#lastUpdated {
+  display: none; /* Hide last updated timestamp to match image */
 }
 
 /* Update Banner */
@@ -493,45 +524,54 @@ button:active {
   color: var(--text-2);
 }
 
-/* Responsive Design */
+/* Responsive Design - Mobile First Approach */
 @media (max-width: 768px) {
   body {
-    padding: 10px;
+    padding: 0;
   }
 
   .card,
   .container {
-    padding: 30px 20px;
-    border-radius: 15px;
+    padding: 20px;
+    border-radius: 0;
+    min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height for mobile */
   }
 
   h1 {
     font-size: 2em;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
   }
 
   .welcome-text {
-    font-size: 1.1em;
+    font-size: 1em;
     margin-bottom: 20px;
   }
 
   .logo {
     max-width: 150px;
+    margin-bottom: 10px;
   }
 
   .settings-icon {
     top: 15px;
     right: 15px;
-    width: 36px;
-    height: 36px;
-    font-size: 20px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .settings-icon svg {
+    width: 24px;
+    height: 24px;
   }
 
   .modal-content {
     padding: 20px;
     border-radius: 15px;
+    max-height: 85vh;
   }
 
+  .result,
   .output {
     padding: 15px;
     min-height: 60px;
@@ -544,37 +584,103 @@ button:active {
 
   select,
   input[type="number"] {
-    padding: 10px 12px;
+    padding: 14px 15px;
     font-size: 16px; /* Prevents zoom on iOS */
+    -webkit-appearance: none;
+    appearance: none;
   }
   
   .input-with-button {
-    flex-direction: column;
+    flex-direction: row;
     gap: 10px;
   }
   
   .go-btn {
-    width: 100%;
-    padding: 12px;
-    min-width: auto;
+    padding: 14px 24px;
+    min-width: 80px;
+    flex-shrink: 0;
+    font-size: 16px;
+  }
+
+  .home-country-display {
+    font-size: 1em;
+  }
+
+  .home-currency-hint {
+    font-size: 0.95em;
   }
 }
 
 @media (max-width: 480px) {
+  .card,
   .container {
-    padding: 20px 15px;
+    padding: 15px;
   }
 
   h1 {
     font-size: 1.75em;
+    margin-bottom: 12px;
   }
 
   .welcome-text {
-    font-size: 1em;
+    font-size: 0.95em;
+    margin-bottom: 18px;
   }
 
   .logo {
     max-width: 120px;
+    margin-bottom: 8px;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .input-with-button {
+    gap: 8px;
+  }
+
+  .go-btn {
+    padding: 14px 20px;
+    min-width: 70px;
+  }
+}
+
+/* Tablet specific styles */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .card,
+  .container {
+    max-width: 600px;
+    margin: 0 auto;
+    border-radius: 20px;
+    padding: 40px;
+    min-height: auto;
+    margin-top: 20px;
+    margin-bottom: 20px;
+  }
+
+  body {
+    padding: 20px;
+    align-items: center;
+  }
+}
+
+/* Large screens */
+@media (min-width: 1025px) {
+  .card,
+  .container {
+    max-width: 600px;
+    margin: 0 auto;
+    border-radius: 20px;
+    padding: 40px;
+    min-height: auto;
+    margin-top: 40px;
+    margin-bottom: 40px;
+  }
+
+  body {
+    padding: 20px;
+    align-items: center;
   }
 }
 
