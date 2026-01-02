@@ -533,9 +533,6 @@ async function updateResult() {
   outputElement.classList.add('has-result');
 }
 
-// Go button element
-const goBtn = document.getElementById('goBtn');
-
 // Listen to amount input changes
 if (amountInput) {
   amountInput.addEventListener('input', updateResult);
@@ -550,15 +547,23 @@ if (amountInput) {
   });
 }
 
-// Go button click handler
-if (goBtn) {
-  goBtn.addEventListener('click', () => {
-    updateResult();
-  });
-}
-
 // Initialize result box with home currency
 updateResult();
+
+// Format date as M/D/YYYY HH:MM (24-hour format)
+function formatDateTime(timestamp) {
+  const date = new Date(timestamp);
+  const month = date.getMonth() + 1; // getMonth() returns 0-11
+  const day = date.getDate();
+  const year = date.getFullYear();
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  
+  // Format minutes with leading zero if needed
+  const minutesStr = minutes.toString().padStart(2, '0');
+  
+  return `${month}/${day}/${year} ${hours}:${minutesStr}`;
+}
 
 // Update status pill with online/offline and cache status
 function updateStatusPill() {
@@ -567,7 +572,14 @@ function updateStatusPill() {
     statusElement.classList.remove('offline');
     statusElement.classList.add('online');
   } else {
-    statusElement.textContent = 'Offline — cached version';
+    // Get cached rates to find last update timestamp
+    const cached = getCachedRates();
+    if (cached && cached.timestamp) {
+      const formattedDateTime = formatDateTime(cached.timestamp);
+      statusElement.textContent = `OFFLINE last exchange rate update was ${formattedDateTime}`;
+    } else {
+      statusElement.textContent = 'OFFLINE';
+    }
     statusElement.classList.remove('online');
     statusElement.classList.add('offline');
   }
@@ -840,3 +852,8 @@ window.addEventListener('online', () => {
 window.addEventListener('offline', () => {
   updateStatusPill();
 });
+
+// Poll online/offline status every 100ms for real-time updates
+setInterval(() => {
+  updateStatusPill();
+}, 100);

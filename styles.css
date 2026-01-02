@@ -173,53 +173,6 @@ input[type="number"]::-webkit-outer-spin-button {
   margin: 0;
 }
 
-/* Input with button container */
-.input-with-button {
-  display: flex;
-  gap: 10px;
-  align-items: stretch;
-  width: 100%;
-}
-
-.input-with-button input[type="number"] {
-  flex: 1;
-  margin: 0;
-  width: auto;
-  min-width: 0;
-}
-
-.go-btn {
-  padding: 12px 20px;
-  background: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-size: 1em;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  transition: background 0.3s, transform 0.1s;
-  white-space: nowrap;
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.go-btn:hover {
-  background: var(--accent);
-}
-
-.go-btn:active {
-  transform: scale(0.98);
-}
-
-.go-btn:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(31, 111, 106, 0.3);
-}
 
 select:focus,
 input[type="number"]:focus {
@@ -612,18 +565,6 @@ button:active {
     -webkit-appearance: none;
     appearance: none;
   }
-  
-  .input-with-button {
-    flex-direction: row;
-    gap: 10px;
-  }
-  
-  .go-btn {
-    padding: 14px 24px;
-    min-width: 80px;
-    flex-shrink: 0;
-    font-size: 16px;
-  }
 
   .home-country-display {
     font-size: 1em;
@@ -657,15 +598,6 @@ button:active {
 
   .form-group {
     margin-bottom: 20px;
-  }
-
-  .input-with-button {
-    gap: 8px;
-  }
-
-  .go-btn {
-    padding: 14px 20px;
-    min-width: 70px;
   }
 }
 
