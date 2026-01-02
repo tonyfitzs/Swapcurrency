@@ -22,16 +22,25 @@
   box-sizing: border-box;
 }
 
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   background: var(--surface); /* Light beige background matching image */
   min-height: 100vh;
+  min-height: 100dvh;
+  padding:
+    env(safe-area-inset-top)
+    env(safe-area-inset-right)
+    env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
   display: flex;
+  align-items: center;
   justify-content: center;
-  align-items: flex-start;
-  padding: 0;
   color: var(--text);
-  margin: 0;
   overflow-x: hidden;
 }
 
@@ -45,8 +54,7 @@ body {
   width: 100%;
   box-shadow: none;
   position: relative;
-  min-height: 100vh;
-  min-height: 100dvh; /* Dynamic viewport height for mobile */
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -655,6 +663,7 @@ button:active {
     border-radius: 20px;
     padding: 40px;
     min-height: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
     margin-top: 20px;
     margin-bottom: 20px;
   }
@@ -674,6 +683,7 @@ button:active {
     border-radius: 20px;
     padding: 40px;
     min-height: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
     margin-top: 40px;
     margin-bottom: 40px;
   }

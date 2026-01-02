@@ -79,12 +79,17 @@ async function getCountryFromLocation(lat, lon) {
   }
 }
 
-// Get user's location and update currency
+// Get user's location and update local currency
 async function updateCurrencyFromLocation() {
   if (!navigator.geolocation) {
     console.log('Geolocation is not supported by this browser');
-    // Keep default VND
+    // Keep default VND as local currency
+    fromCurrency = 'VND';
     updateAmountLabel();
+    // Update output display
+    if (amountInput && !amountInput.value.trim()) {
+      updateResult();
+    }
     return;
   }
   
@@ -101,21 +106,35 @@ async function updateCurrencyFromLocation() {
           const detectedCurrency = getCurrencyFromCountry(countryName);
           fromCurrency = detectedCurrency;
           updateAmountLabel();
-          console.log(`Location detected: ${countryName}, Currency: ${detectedCurrency}`);
+          console.log(`Location detected: ${countryName}, Local Currency: ${detectedCurrency}`);
+          
+          // Update output if amount is already entered
+          if (amountInput && amountInput.value.trim()) {
+            updateResult();
+          } else {
+            // Update empty output to show local currency
+            updateResult();
+          }
         } else {
           // If country detection fails, keep VND
+          fromCurrency = 'VND';
           updateAmountLabel();
+          updateResult();
         }
       } catch (error) {
         console.error('Error processing location:', error);
         // Keep default VND on error
+        fromCurrency = 'VND';
         updateAmountLabel();
+        updateResult();
       }
     },
     (error) => {
       console.log('Geolocation error:', error.message);
       // Keep default VND if user denies or error occurs
+      fromCurrency = 'VND';
       updateAmountLabel();
+      updateResult();
     },
     {
       enableHighAccuracy: true,
@@ -125,10 +144,10 @@ async function updateCurrencyFromLocation() {
   );
 }
 
-// Update amount label with current currency
+// Update amount label to show home currency (user enters home currency, converts to local)
 function updateAmountLabel() {
   if (amountLabel) {
-    amountLabel.textContent = `Amount in ${fromCurrency}`;
+    amountLabel.textContent = `Amount in ${HOME_CURRENCY}`;
   }
 }
 
@@ -241,12 +260,19 @@ function updateHomeCountryDisplay() {
 // Initialize home country display
 updateHomeCountryDisplay();
 
-// Initialize amount label with default currency (VND)
+// Initialize amount label to show home currency
 updateAmountLabel();
+
+// Initialize output display
+updateResult();
 
 // Pre-fetch exchange rates on load
 window.addEventListener('load', async () => {
   await fetchExchangeRates();
+  // Update result if amount is already entered
+  if (amountInput && amountInput.value.trim()) {
+    updateResult();
+  }
 });
 
 // Get location and update currency when app loads
@@ -321,11 +347,14 @@ function formatCurrency(amount, currency) {
 }
 
 // Update result box based on amount input
+// User enters HOME_CURRENCY amount, converts to local currency (fromCurrency)
 async function updateResult() {
   const amount = parseFloat(amountInput.value.trim());
   
   if (!amount || amount <= 0 || isNaN(amount)) {
-    outputElement.innerHTML = `<strong>Amount in ${HOME_CURRENCY}:</strong>`;
+    // Show local currency in output when empty
+    const localCurrencyName = currencyToCountry[fromCurrency] ? `${currencyToCountry[fromCurrency]} (${fromCurrency})` : fromCurrency;
+    outputElement.innerHTML = `<strong>Amount in ${localCurrencyName}:</strong>`;
     outputElement.classList.remove('has-result');
     return;
   }
@@ -334,7 +363,7 @@ async function updateResult() {
   outputElement.innerHTML = 'Loading exchange rates...';
   outputElement.classList.remove('has-result');
 
-  // Fetch exchange rates
+  // Fetch exchange rates from cache or API
   const rates = await fetchExchangeRates();
 
   if (!rates) {
@@ -343,35 +372,36 @@ async function updateResult() {
     return;
   }
 
-  // Convert: fromCurrency -> USD -> HOME_CURRENCY
-  // First convert fromCurrency amount to USD (if not USD)
+  // Convert: HOME_CURRENCY -> USD -> fromCurrency (local currency)
+  // First convert HOME_CURRENCY amount to USD (if not USD)
   let amountInUSD = amount;
-  if (fromCurrency !== 'USD') {
-    if (!rates[fromCurrency]) {
-      outputElement.innerHTML = `Exchange rate not available for ${fromCurrency}`;
-      outputElement.classList.remove('has-result');
-      return;
-    }
-    const fromCurrencyToUSD = 1 / rates[fromCurrency];
-    amountInUSD = amount * fromCurrencyToUSD;
-  }
-
-  // Then convert USD to HOME_CURRENCY
-  let convertedAmount = amountInUSD;
   if (HOME_CURRENCY !== 'USD') {
     if (!rates[HOME_CURRENCY]) {
       outputElement.innerHTML = `Exchange rate not available for ${HOME_CURRENCY}`;
       outputElement.classList.remove('has-result');
       return;
     }
-    convertedAmount = amountInUSD * rates[HOME_CURRENCY];
+    const homeCurrencyToUSD = 1 / rates[HOME_CURRENCY];
+    amountInUSD = amount * homeCurrencyToUSD;
   }
 
-  // Display result
+  // Then convert USD to local currency (fromCurrency)
+  let convertedAmount = amountInUSD;
+  if (fromCurrency !== 'USD') {
+    if (!rates[fromCurrency]) {
+      outputElement.innerHTML = `Exchange rate not available for ${fromCurrency}`;
+      outputElement.classList.remove('has-result');
+      return;
+    }
+    convertedAmount = amountInUSD * rates[fromCurrency];
+  }
+
+  // Display result in local currency
+  const localCurrencyName = currencyToCountry[fromCurrency] ? `${currencyToCountry[fromCurrency]} (${fromCurrency})` : fromCurrency;
   outputElement.innerHTML = `
-    <strong>Amount in ${HOME_CURRENCY}:</strong>
+    <strong>Amount in ${localCurrencyName}:</strong>
     <div style="font-size: 1.5em; font-weight: bold; color: var(--primary); margin-top: 10px;">
-      ${formatCurrency(convertedAmount, HOME_CURRENCY)}
+      ${formatCurrency(convertedAmount, fromCurrency)}
     </div>
   `;
   outputElement.classList.add('has-result');
