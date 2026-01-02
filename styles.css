@@ -305,6 +305,21 @@ input[type="number"]:focus {
   display: none; /* Hide last updated timestamp to match image */
 }
 
+/* Exchange Rate Message */
+.exchange-rate-message {
+  padding: 10px 15px;
+  background: var(--surface-2);
+  border-top: 1px solid var(--border);
+  font-size: 0.75em;
+  color: var(--text-2);
+  text-align: center;
+  margin-top: auto;
+  margin-bottom: 0;
+  line-height: 1.5;
+  width: 100%;
+  flex-shrink: 0;
+}
+
 /* Update Banner */
 .update-banner {
   display: none;

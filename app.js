@@ -5,8 +5,13 @@ const statusElement = document.getElementById('status');
 const lastUpdatedElement = document.getElementById('lastUpdated');
 const amountLabel = document.getElementById('amountLabel');
 
-// Default fromCurrency (set to VND for now, will be updated via geolocation)
-let fromCurrency = 'VND';
+// Location permission and currency storage keys
+const LOCATION_PERMISSION_KEY = 'locationPermissionGranted';
+const DETECTED_CURRENCY_KEY = 'detectedCurrency';
+const DETECTED_COUNTRY_KEY = 'detectedCountry';
+
+// Default fromCurrency - try to load from cache, otherwise VND
+let fromCurrency = localStorage.getItem(DETECTED_CURRENCY_KEY) || 'VND';
 
 // Country name to currency code mapping
 const countryToCurrencyCode = {
@@ -54,24 +59,37 @@ async function getCountryFromLocation(lat, lon) {
   try {
     // Use OpenStreetMap Nominatim API (free, no API key required)
     // Note: Be respectful with rate limiting (max 1 request per second)
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=3&addressdetails=1`,
-      {
-        headers: {
-          'User-Agent': 'Here2Home Currency Converter App' // Required by Nominatim
-        }
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=3&addressdetails=1`;
+    
+    console.log('Fetching country from:', url);
+    
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Here2Home Currency Converter App', // Required by Nominatim
+        'Accept-Language': 'en'
       }
-    );
+    });
     
     if (!response.ok) {
-      throw new Error('Geocoding API error');
+      console.error('Geocoding API error:', response.status, response.statusText);
+      throw new Error(`Geocoding API error: ${response.status}`);
     }
     
     const data = await response.json();
+    console.log('Geocoding response:', data);
+    
     if (data && data.address) {
       // Try different address fields for country name
-      return data.address.country || data.address.country_code?.toUpperCase() || null;
+      const country = data.address.country || 
+                     (data.address.country_code ? data.address.country_code.toUpperCase() : null);
+      
+      if (country) {
+        console.log('Detected country:', country);
+        return country;
+      }
     }
+    
+    console.log('No country found in geocoding response');
     return null;
   } catch (error) {
     console.error('Error getting country from location:', error);
@@ -83,71 +101,112 @@ async function getCountryFromLocation(lat, lon) {
 async function updateCurrencyFromLocation() {
   if (!navigator.geolocation) {
     console.log('Geolocation is not supported by this browser');
-    // Keep default VND as local currency
-    fromCurrency = 'VND';
-    updateAmountLabel();
-    // Update output display
-    if (amountInput && !amountInput.value.trim()) {
-      updateResult();
+    // Use cached currency if available
+    const cachedCurrency = localStorage.getItem(DETECTED_CURRENCY_KEY);
+    if (cachedCurrency) {
+      fromCurrency = cachedCurrency;
     }
+    updateAmountLabel();
+    updateResult();
     return;
   }
+
+  // Check if permission was already granted
+  const permissionGranted = localStorage.getItem(LOCATION_PERMISSION_KEY) === 'true';
   
-  // Request location with timeout
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
-      try {
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
+  // If permission was granted before, use watchPosition for better accuracy
+  // Otherwise, request permission with getCurrentPosition
+  const geoOptions = {
+    enableHighAccuracy: true,
+    timeout: 15000, // 15 seconds timeout
+    maximumAge: 3600000 // Cache for 1 hour
+  };
+
+  const onSuccess = async (position) => {
+    try {
+      // Store that permission was granted
+      localStorage.setItem(LOCATION_PERMISSION_KEY, 'true');
+      
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+      
+      console.log(`Getting country for coordinates: ${lat}, ${lon}`);
+      const countryName = await getCountryFromLocation(lat, lon);
+      
+      if (countryName) {
+        const detectedCurrency = getCurrencyFromCountry(countryName);
+        fromCurrency = detectedCurrency;
         
-        const countryName = await getCountryFromLocation(lat, lon);
+        // Store detected currency and country
+        localStorage.setItem(DETECTED_CURRENCY_KEY, detectedCurrency);
+        localStorage.setItem(DETECTED_COUNTRY_KEY, countryName);
         
-        if (countryName) {
-          const detectedCurrency = getCurrencyFromCountry(countryName);
-          fromCurrency = detectedCurrency;
-          updateAmountLabel();
-          console.log(`Location detected: ${countryName}, Local Currency: ${detectedCurrency}`);
-          
-          // Update output if amount is already entered
-          if (amountInput && amountInput.value.trim()) {
-            updateResult();
-          } else {
-            // Update empty output to show local currency
-            updateResult();
-          }
-        } else {
-          // If country detection fails, keep VND
-          fromCurrency = 'VND';
-          updateAmountLabel();
-          updateResult();
+        updateAmountLabel();
+        console.log(`Location detected: ${countryName}, Local Currency: ${detectedCurrency}`);
+        
+        // Update output
+        updateResult();
+      } else {
+        console.log('Country detection failed, using cached currency');
+        // Use cached currency if available
+        const cachedCurrency = localStorage.getItem(DETECTED_CURRENCY_KEY);
+        if (cachedCurrency) {
+          fromCurrency = cachedCurrency;
         }
-      } catch (error) {
-        console.error('Error processing location:', error);
-        // Keep default VND on error
-        fromCurrency = 'VND';
         updateAmountLabel();
         updateResult();
       }
-    },
-    (error) => {
-      console.log('Geolocation error:', error.message);
-      // Keep default VND if user denies or error occurs
-      fromCurrency = 'VND';
+    } catch (error) {
+      console.error('Error processing location:', error);
+      // Use cached currency if available
+      const cachedCurrency = localStorage.getItem(DETECTED_CURRENCY_KEY);
+      if (cachedCurrency) {
+        fromCurrency = cachedCurrency;
+      }
       updateAmountLabel();
       updateResult();
-    },
-    {
-      enableHighAccuracy: true,
-      timeout: 10000, // 10 seconds timeout
-      maximumAge: 300000 // Cache for 5 minutes
     }
-  );
+  };
+
+  const onError = (error) => {
+    console.log('Geolocation error:', error.message, error.code);
+    
+    // If user denied permission, remember that
+    if (error.code === error.PERMISSION_DENIED) {
+      localStorage.setItem(LOCATION_PERMISSION_KEY, 'denied');
+      console.log('Location permission denied by user');
+    }
+    
+    // Use cached currency if available
+    const cachedCurrency = localStorage.getItem(DETECTED_CURRENCY_KEY);
+    if (cachedCurrency) {
+      fromCurrency = cachedCurrency;
+      console.log(`Using cached currency: ${cachedCurrency}`);
+    }
+    
+    updateAmountLabel();
+    updateResult();
+  };
+
+  // Only request location if permission wasn't explicitly denied
+  if (localStorage.getItem(LOCATION_PERMISSION_KEY) !== 'denied') {
+    navigator.geolocation.getCurrentPosition(onSuccess, onError, geoOptions);
+  } else {
+    // Permission was denied before, use cached currency
+    console.log('Location permission was previously denied, using cached currency');
+    const cachedCurrency = localStorage.getItem(DETECTED_CURRENCY_KEY);
+    if (cachedCurrency) {
+      fromCurrency = cachedCurrency;
+    }
+    updateAmountLabel();
+    updateResult();
+  }
 }
 
-// Update amount label to show home currency (user enters home currency, converts to local)
+// Update amount label to show local currency (user enters local currency, converts to home)
 function updateAmountLabel() {
   if (amountLabel) {
-    amountLabel.textContent = `Amount in ${HOME_CURRENCY}`;
+    amountLabel.textContent = `Amount in ${fromCurrency}`;
   }
 }
 
@@ -260,15 +319,20 @@ function updateHomeCountryDisplay() {
 // Initialize home country display
 updateHomeCountryDisplay();
 
-// Initialize amount label to show home currency
+// Initialize amount label with cached or default currency
 updateAmountLabel();
 
 // Initialize output display
 updateResult();
 
-// Pre-fetch exchange rates on load
+// Pre-fetch exchange rates on load and set up automatic updates
 window.addEventListener('load', async () => {
+  // Set up automatic 12-hour updates
+  setupAutomaticUpdates();
+  
+  // Initial fetch
   await fetchExchangeRates();
+  
   // Update result if amount is already entered
   if (amountInput && amountInput.value.trim()) {
     updateResult();
@@ -282,58 +346,120 @@ updateCurrencyFromLocation();
 // Exchange Rates Cache
 let exchangeRates = null;
 const RATES_CACHE_KEY = 'exchangeRates';
-const RATES_CACHE_TIME = 24 * 60 * 60 * 1000; // 24 hours
+const RATES_UPDATE_INTERVAL = 12 * 60 * 60 * 1000; // 12 hours
 
-// Fetch exchange rates
-async function fetchExchangeRates() {
-  // Check cache first
+// Get cached rates
+function getCachedRates() {
   const cached = localStorage.getItem(RATES_CACHE_KEY);
   if (cached) {
-    const { rates, timestamp } = JSON.parse(cached);
-    const age = Date.now() - timestamp;
-    if (age < RATES_CACHE_TIME) {
-      console.log('Using cached exchange rates');
+    return JSON.parse(cached);
+  }
+  return null;
+}
+
+// Update exchange rates message display
+function updateExchangeRateMessage(usingCached, timestamp) {
+  const messageElement = document.getElementById('exchangeRateMessage');
+  if (!messageElement) return;
+
+  if (usingCached && timestamp) {
+    const lastUpdate = new Date(timestamp);
+    const dateTimeString = lastUpdate.toLocaleString();
+    const offlineText = !navigator.onLine 
+      ? 'Your device is currently not online.' 
+      : 'Unable to update exchange rates.';
+    messageElement.textContent = `Currency rate is based on last update at ${dateTimeString}. ${offlineText}`;
+    messageElement.style.display = 'block';
+  } else {
+    messageElement.style.display = 'none';
+  }
+}
+
+// Fetch exchange rates - always tries to update, falls back to cache if offline
+async function fetchExchangeRates(forceUpdate = false) {
+  const cached = getCachedRates();
+  let usingCached = false;
+  let cacheTimestamp = null;
+
+  // Always try to fetch fresh rates if online
+  if (navigator.onLine) {
+    try {
+      // Using exchangerate-api.com (free, no API key required)
+      const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+      if (!response.ok) throw new Error('Failed to fetch rates');
+      
+      const data = await response.json();
+      const rates = data.rates;
+      const timestamp = Date.now();
+      
+      // Cache the rates
+      localStorage.setItem(RATES_CACHE_KEY, JSON.stringify({
+        rates: rates,
+        timestamp: timestamp
+      }));
+      
+      console.log('Exchange rates fetched and cached');
+      
+      // Hide message since we got fresh rates
+      updateExchangeRateMessage(false, null);
+      
       return rates;
+    } catch (error) {
+      console.error('Error fetching exchange rates:', error);
+      // Fall through to use cached rates
     }
   }
 
-  // Fetch from API if online
-  if (!navigator.onLine) {
-    // Use cached rates even if expired when offline
-    if (cached) {
-      const { rates } = JSON.parse(cached);
-      console.log('Offline: Using expired cached rates');
-      return rates;
+  // Use cached rates if available (offline or fetch failed)
+  if (cached) {
+    usingCached = true;
+    cacheTimestamp = cached.timestamp;
+    console.log('Using cached exchange rates');
+    
+    // Show message if offline
+    if (!navigator.onLine) {
+      updateExchangeRateMessage(true, cacheTimestamp);
+    } else {
+      // Online but fetch failed - still show message
+      updateExchangeRateMessage(true, cacheTimestamp);
     }
-    return null;
+    
+    return cached.rates;
   }
 
-  try {
-    // Using exchangerate-api.com (free, no API key required)
-    const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-    if (!response.ok) throw new Error('Failed to fetch rates');
-    
-    const data = await response.json();
-    const rates = data.rates;
-    
-    // Cache the rates
-    localStorage.setItem(RATES_CACHE_KEY, JSON.stringify({
-      rates: rates,
-      timestamp: Date.now()
-    }));
-    
-    console.log('Exchange rates fetched and cached');
-    return rates;
-  } catch (error) {
-    console.error('Error fetching exchange rates:', error);
-    // Try to use cached rates even if expired
-    if (cached) {
-      const { rates } = JSON.parse(cached);
-      console.log('Using expired cached rates due to fetch error');
-      return rates;
-    }
-    return null;
+  // No cache available
+  updateExchangeRateMessage(false, null);
+  return null;
+}
+
+// Automatic 12-hour update check
+function checkAndUpdateRates() {
+  const cached = getCachedRates();
+  
+  if (!cached) {
+    // No cache, fetch immediately
+    fetchExchangeRates();
+    return;
   }
+
+  const age = Date.now() - cached.timestamp;
+  
+  // If cache is older than 12 hours and online, update
+  if (age >= RATES_UPDATE_INTERVAL && navigator.onLine) {
+    console.log('12-hour update interval reached, updating rates...');
+    fetchExchangeRates();
+  }
+}
+
+// Set up automatic 12-hour updates
+function setupAutomaticUpdates() {
+  // Check immediately on load
+  checkAndUpdateRates();
+  
+  // Check every hour (to catch when 12 hours has passed)
+  setInterval(() => {
+    checkAndUpdateRates();
+  }, 60 * 60 * 1000); // Check every hour
 }
 
 // Format currency amount
@@ -347,14 +473,14 @@ function formatCurrency(amount, currency) {
 }
 
 // Update result box based on amount input
-// User enters HOME_CURRENCY amount, converts to local currency (fromCurrency)
+// User enters local currency (fromCurrency), converts to HOME_CURRENCY
 async function updateResult() {
   const amount = parseFloat(amountInput.value.trim());
   
   if (!amount || amount <= 0 || isNaN(amount)) {
-    // Show local currency in output when empty
-    const localCurrencyName = currencyToCountry[fromCurrency] ? `${currencyToCountry[fromCurrency]} (${fromCurrency})` : fromCurrency;
-    outputElement.innerHTML = `<strong>Amount in ${localCurrencyName}:</strong>`;
+    // Show home currency in output when empty
+    const homeCurrencyName = currencyToCountry[HOME_CURRENCY] ? `${currencyToCountry[HOME_CURRENCY]} (${HOME_CURRENCY})` : HOME_CURRENCY;
+    outputElement.innerHTML = `<strong>Amount in ${homeCurrencyName}:</strong>`;
     outputElement.classList.remove('has-result');
     return;
   }
@@ -363,8 +489,8 @@ async function updateResult() {
   outputElement.innerHTML = 'Loading exchange rates...';
   outputElement.classList.remove('has-result');
 
-  // Fetch exchange rates from cache or API
-  const rates = await fetchExchangeRates();
+  // Always try to update rates when conversion is requested
+  const rates = await fetchExchangeRates(true);
 
   if (!rates) {
     outputElement.innerHTML = 'Unable to fetch exchange rates. Please check your connection.';
@@ -372,36 +498,36 @@ async function updateResult() {
     return;
   }
 
-  // Convert: HOME_CURRENCY -> USD -> fromCurrency (local currency)
-  // First convert HOME_CURRENCY amount to USD (if not USD)
+  // Convert: fromCurrency (local) -> USD -> HOME_CURRENCY
+  // First convert local currency amount to USD (if not USD)
   let amountInUSD = amount;
-  if (HOME_CURRENCY !== 'USD') {
-    if (!rates[HOME_CURRENCY]) {
-      outputElement.innerHTML = `Exchange rate not available for ${HOME_CURRENCY}`;
-      outputElement.classList.remove('has-result');
-      return;
-    }
-    const homeCurrencyToUSD = 1 / rates[HOME_CURRENCY];
-    amountInUSD = amount * homeCurrencyToUSD;
-  }
-
-  // Then convert USD to local currency (fromCurrency)
-  let convertedAmount = amountInUSD;
   if (fromCurrency !== 'USD') {
     if (!rates[fromCurrency]) {
       outputElement.innerHTML = `Exchange rate not available for ${fromCurrency}`;
       outputElement.classList.remove('has-result');
       return;
     }
-    convertedAmount = amountInUSD * rates[fromCurrency];
+    const localCurrencyToUSD = 1 / rates[fromCurrency];
+    amountInUSD = amount * localCurrencyToUSD;
   }
 
-  // Display result in local currency
-  const localCurrencyName = currencyToCountry[fromCurrency] ? `${currencyToCountry[fromCurrency]} (${fromCurrency})` : fromCurrency;
+  // Then convert USD to HOME_CURRENCY
+  let convertedAmount = amountInUSD;
+  if (HOME_CURRENCY !== 'USD') {
+    if (!rates[HOME_CURRENCY]) {
+      outputElement.innerHTML = `Exchange rate not available for ${HOME_CURRENCY}`;
+      outputElement.classList.remove('has-result');
+      return;
+    }
+    convertedAmount = amountInUSD * rates[HOME_CURRENCY];
+  }
+
+  // Display result in home currency
+  const homeCurrencyName = currencyToCountry[HOME_CURRENCY] ? `${currencyToCountry[HOME_CURRENCY]} (${HOME_CURRENCY})` : HOME_CURRENCY;
   outputElement.innerHTML = `
-    <strong>Amount in ${localCurrencyName}:</strong>
+    <strong>Amount in ${homeCurrencyName}:</strong>
     <div style="font-size: 1.5em; font-weight: bold; color: var(--primary); margin-top: 10px;">
-      ${formatCurrency(convertedAmount, fromCurrency)}
+      ${formatCurrency(convertedAmount, HOME_CURRENCY)}
     </div>
   `;
   outputElement.classList.add('has-result');
